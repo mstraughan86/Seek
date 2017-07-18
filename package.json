@@ -1,0 +1,16 @@
+{
+  "name": "Seek",
+  "version": "1.0.0",
+  "description": "Seek out allies in a time of great need!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Michael Straughan",
+  "license": "ISC",
+  "dependencies": {
+    "mongod": "^2.0.0",
+    "mongoose": "^4.11.14",
+    "octokat": "^0.9.2"
+  }
+}
