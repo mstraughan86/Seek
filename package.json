@@ -9,6 +9,7 @@
   "author": "Michael Straughan",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^4.0.0",
     "mongod": "^2.0.0",
     "mongoose": "^4.11.14",
     "nightmare": "^2.10.0",
