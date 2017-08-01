@@ -1,35 +1,210 @@
+require('dotenv').config();
+
 const mongoose = require('./mongoose.js');
 const DATABASE = 'followers';
 const FollowerToProcess = mongoose.schemas.FollowerToProcess;
 const ProcessedFollower = mongoose.schemas.ProcessedFollower;
+const Temporary = mongoose.schemas.Temporary;
+
+const user = process.env.SEED || asdf;
+const patron = process.env.GITHUB_ACCOUNT || 'your_github_account';
+const email = process.env.EMAIL || 'email@mailinator.com';
+const password = process.env.PASSWORD || 'password';
+const rate = process.env.RATE_LIMITER || 1; // You might be able to go as low as 0.73, but I have not tried.
+const capture = process.env.CAPTURE || 100;
 
 const Octokat = require('octokat');
 const octo = new Octokat({
-//	username: "USER_NAME",
-//	password: "PASSWORD"
+  username: email,
+  password: password
 });
 
-//octo.zen.read(cb)
-//octo.users('philschatz').followers.fetch(cb)    // Fetch repo info
-// octo.me.starred('philschatz', 'octokat.js').add(cb) // Star a repo
-// octo.me.starred('philschatz', 'octokat.js').remove(cb) // Un-Star a repo
+let Nightmare = require('nightmare');
+let webDriver;
+let showElectron = false;
+let openDevModeElectron = false;
 
-const user = 'philschatz';
+const loginToGithub = () => {
+  return new Promise((resolve, reject) => {
+    webDriver
+      .viewport(1000, 1000)
+      .goto('https://github.com/login')
+      .wait()
+      .insert('#login_field', email)
+      .insert('#password', password)
+      .click('.btn-primary')
+      .wait('.js-select-button')
+      .then(() => {
+        console.log('Logged in!');
+        return resolve();
+      })
+      .catch(error => {
+        console.error('Nightmare failed to login:', error);
+        return reject(error);
+        //return reject({name: 'Nightmare Login', type: 'Nightmare', message: 'Nightmare failed to login' + error});
+      });
+  })
+};
+const terminateWebDriver = () => {
+  return new Promise((resolve, reject) => {
+    webDriver
+      .end()
+      .then(function () {
+        console.log('Closed WebDriver');
+        return resolve();
+      })
+  })
+};
+const initializeWebDriver = () => {
+  webDriver = Nightmare({
+    show: showElectron,
+    openDevTools: openDevModeElectron
+  });
+};
 
-function wait(ms = 1000) {
-  console.log('Waiting.');
+const range = (start, end) => Array.from({length: (end - start + 1)}, (v, k) => k + start);
+const wait = (s = rate) => {
+  console.log('Waiting. ', s);
+  ms = s * 1000;
   var start = new Date().getTime();
   var end = start;
   while (end < start + ms) {
     end = new Date().getTime();
   }
-}
+};
 const delay = time => new Promise(resolve => setTimeout(resolve, time));
-function fetchAll(fn) {
+
+const swapTemporaryFollowers = () => {
+  return Temporary.find({})
+    .then((followers) => {
+      const followersToSave = followers.map((obj) => {return {login: obj.login}});
+      return new Promise(resolve => {
+        mongoose.save(FollowerToProcess, followersToSave)
+          .then(() => {
+            const promises = followers.map(follower => follower.remove());
+            Promise.all(promises)
+              .then(() => {
+                console.log('finished executing dynamic promise chain, swapping Temporary to FollowerToProcess');
+                return resolve();
+              });
+          });
+      });
+    });
+};
+const removeUserFrom = (Collection, user) => {
+  console.log(`removeUserFrom ${user}`);
+  // transform user to model with Get and collection
+
+  return new Promise((resolve) => {
+    Collection.findOne({login: user})
+      .then(result => {
+        if (result) {
+          return result.remove()
+            .then(() => {return resolve(user)});
+        }
+        else resolve(user);
+      });
+  });
+
+
+};
+const addUserTo = (Collection, user) => {
+  console.log(`addUserTo ${user}`);
+
+  return new Promise((resolve) => {
+    Collection.findOne({login: user}, (err, result) => {
+      if (result) return resolve(user);
+      else {
+        return mongoose.save(Collection, [{login: user}])
+          .then(() => {return resolve(user)});
+      }
+    })
+  });
+
+};
+const followGithubUser = (user) => {
+
+  console.log('~~~~~~~~~~~~~~~~~ follow GithubUser', user);
+
+  const gotoAndClick = (user) => {
+    const url = 'https://github.com/' + user;
+    return new Promise((resolve, reject) => {
+      webDriver
+        .viewport(1000, 1000)
+        .goto(url)
+        .wait()
+        .click('.follow button.js-user-profile-follow-button')
+        .then(function () {
+          console.log('Followed a user @ ', url);
+          return resolve(user);
+        })
+        .catch(function (error) {
+          console.error('Nightmare failed:', error);
+          return reject(user);
+        });
+    })
+
+  };
+
+  if (user.length > 0) return gotoAndClick(user);
+  else {
+    return FollowerToProcess.findOne({}, (err, result) => {
+      console.log('Getting a new follower from the "FollowerToProcess" List.');
+      return gotoAndClick(result.login);
+    });
+  }
+
+};
+const doFollowersAlreadyExist = ([results, user]) => {
+  const followers = results.map(result => ({login: result}));
+  const doesFollowerExist_FollowerToProcess = follower => {
+    return new Promise(resolve => {
+      return FollowerToProcess.count({login: follower.login}, (err, count) => {
+        if (count > 0) return resolve(true);
+        else return resolve(false);
+      });
+    });
+  };
+  const doesFollowerExist_ProcessedFollower = follower => {
+    return new Promise(resolve => {
+      return ProcessedFollower.count({login: follower.login}, (err, count) => {
+        if (count > 0) return resolve(true);
+        else return resolve(false);
+      });
+    });
+  };
+  const doesFollowerExist_Patron = follower => (patron == follower);
+
+  const promises = followers.map(follower => {
+    const list = [
+      doesFollowerExist_FollowerToProcess.bind(null, follower)(),
+      doesFollowerExist_ProcessedFollower.bind(null, follower)(),
+      doesFollowerExist_Patron.bind(null, follower)()
+    ];
+    return Promise.all(list)
+      .then((results) => {
+        const [exist_FollowerToProcess, exist_ProcessedFollower, is_Patron] = results;
+        if (!exist_FollowerToProcess && !exist_ProcessedFollower && !is_Patron) {
+          return Promise.resolve(mongoose.save(Temporary, follower));
+        }
+        else {
+          console.log('Already in the system: ', follower.login);
+          return Promise.resolve('Already in the system');
+        }
+      })
+  });
+  return Promise.all(promises)
+    .then(() => {
+      // not resolving here.
+      console.log('finished executing dynamic promise chain');
+      return Promise.resolve(user);
+    });
+};
+const fetchAll = (func) => {
   wait();
   let acc = []; // Accumulated results
   return new Promise((resolve, reject) => {
-    fn().then((val) => {
+    func().then((val) => {
       acc = acc.concat(val.items.map((i) => i.login));
       if (val.nextPage) {
         return fetchAll(val.nextPage.fetch)
@@ -43,102 +218,107 @@ function fetchAll(fn) {
       }
     }, reject);
   });
-}
-/*
- fetchAll(octo.users('philschatz').followers.fetch)
- .then((allFollowers) => {
- //foreach
+};
+const fetchAllFollowers = user => {
+  console.log('Fetching user\'s followers:, ', user);
 
- // is this already a friend?
- // is this already processed?
- // is this already to be processed?
- // else...
- console.log(allFollowers.length);
- return allFollowers;
- });
- */
+  return fetchAll(octo.users(user).followers.fetch)
+    .then(results => [results, user]);
+
+  //const results = fetchAll(octo.users(user).followers.fetch);
+  //return [results, user]
+};
+const seedFollower = () => {
+  return FollowerToProcess.findOne({})
+    .then(result => {
+      if (result) {
+        if (result.login == patron) {
+          return removeUserFrom(FollowerToProcess, result.login)
+            .then(seedFollower);
+        }
+        return result.login;
+      }
+      else return user;
+    });
+};
+
+const processMultipleFollowers = (count) => {
+
+  function reducePromiseArray(promises) {
+    return promises
+      .reduce((chain, promise) => chain.then(promise), Promise.resolve())
+      .then(result => {
+        console.log('Reduce Promise Array complete.');
+        return result;
+      });
+  }
+
+  const processOneFollower = [
+    seedFollower,
+    fetchAllFollowers,
+    doFollowersAlreadyExist,
+    followGithubUser,
+    addUserTo.bind(null, ProcessedFollower),
+    removeUserFrom.bind(null, FollowerToProcess),
+    swapTemporaryFollowers
+  ];
+
+  let promisedWork = [];
+  range(1, count).forEach(()=>{promisedWork = promisedWork.concat(processOneFollower)});
+
+
+  return reducePromiseArray(promisedWork)
+    .then(result => {
+      console.log('===== FINISHED NEW TEST =====');
+      console.log(result);
+      return result;
+    });
+
+};
 
 mongoose.initialize()
   .then(mongoose.connect.bind(null, DATABASE))
-  .then(fetchAll.bind(null, octo.users(user).followers.fetch))
-  .then(results => {
+  .then(initializeWebDriver)
+  .then(loginToGithub)
 
-    // Working from here:
-    // https://stackoverflow.com/a/31414472/7705704
-
-
-    const followers = results.map(result => ({login: result}));
-
-    const doesFollowerExist_FollowerToProcess = login => {
-      return new Promise (resolve => {
-        FollowerToProcess.count({login: login}, (err, count) => {
-          if (count > 0) resolve(true);
-          else resolve(false);
-        });
-      });
-    };
-    const doesFollowerExist_ProcessedFollower = login => {
-      return new Promise (resolve => {
-        ProcessedFollower.count({login: login}, (err, count) => {
-          if (count > 0) resolve(true);
-          else resolve(false);
-        });
-      });
-    };
-
-    // I need something to be returned from this for-each.
-    // maybe just use a map.
-
-    promises = followers.map(follower => {
-      const list = [
-        doesFollowerExist_FollowerToProcess.bind(null, follower)(),
-        doesFollowerExist_ProcessedFollower.bind(null, follower)()
-      ];
-      return Promise.all(list)
-        .then((results)=>{
-          const [exist_FollowerToProcess, exist_ProcessedFollower] = results;
-          if (!exist_FollowerToProcess && !exist_ProcessedFollower) {
-            return Promise.resolve(mongoose.save(FollowerToProcess).then(mongoose.save.bind(null, ProcessedFollower)));
-          }
-          if (!exist_FollowerToProcess) return Promise.resolve(mongoose.save(FollowerToProcess));
-          if (!exist_ProcessedFollower) return Promise.resolve(mongoose.save(ProcessedFollower));
-        })
-    });
-
-    return Promise.all(promises).then(()=>{
-      console.log('finished here');
-      return Promise.resolve(followers);
-    });
-
-    // to here.
-    // I want to return a bunch of promises here. just like the highlighted code says.
-    // https://stackoverflow.com/a/31414472/7705704
-
+  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => {
+    return FollowerToProcess.find({})
+      .then(result => console.log('FollowerToProcess : ', result.length));
   })
+  .then(() => {
+    return ProcessedFollower.find({})
+      .then(result => console.log('ProcessedFollower : ', result.length));
+  })
+  .then(() => {
+    return Temporary.find({})
+      .then(result => console.log('Temporary : ', result.length));
+  })
+  .then(() => console.log('--------------------------------------\n--------------------------------------'))
 
-  // .then(mongoose.save.bind(null, FollowerToProcess))
-  // .then((passthrough) => {
-  //     console.log('How many did we pass along?: ', passthrough.length);
-  //     Promise.resolve(passthrough);
-  // })
-  // .then((passthrough) => {
-  //   return FollowerToProcess.find({}, (err, result) => {
-  //     console.log('How many " FollowerToProcess " records do we have right now?: ', result.length);
-  //     Promise.resolve(passthrough);
-  //   });
-  // })
-  // .then((passthrough) => {
-  //   return ProcessedFollower.find({}, (err, result) => {
-  //     console.log('How many " ProcessedFollower " records do we have right now?: ', result.length);
-  //     Promise.resolve(passthrough);
-  //   });
-  // })
+  .then(processMultipleFollowers.bind(null, capture))
 
+  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => {
+    return FollowerToProcess.find({})
+      .then(result => console.log('FollowerToProcess : ', result.length));
+  })
+  .then(() => {
+    return ProcessedFollower.find({})
+      .then(result => console.log('ProcessedFollower : ', result.length));
+  })
+  .then(() => {
+    return Temporary.find({})
+      .then(result => console.log('Temporary : ', result.length));
+  })
+  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+
+  .then(terminateWebDriver)
   .then(mongoose.disconnect)
   .then(delay.bind(null, 3000))
   .then(mongoose.terminate)
+  .then(() => {console.log(`-- !@#$%^&*() ---- captured ${capture} followers ---- )(*&^%$# --`);})
   .catch(console.log.bind(console));
-
 
 /*
 
@@ -153,6 +333,7 @@ mongoose.initialize()
  If user is not already in the PROCESSED list. (Query against PROCESSED List)
  Add to TEMP list.
  Loop>
+
  ^* Follow (This should be NightmareJS);
  Remove User from TO PROCESS list.
  Add TEMP list to TO PROCESS list.
@@ -162,9 +343,3 @@ mongoose.initialize()
  (add in more details, like the mongodb calls.)
 
  */
-
-
-
-	
-	
-
