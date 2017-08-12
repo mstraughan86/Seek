@@ -12,8 +12,8 @@ If you are here wondering why am I following you and are looking for what might 
 
 ## Installation
 #### Prerequisites
--Node 6.9+
--MongoDB 3.4+
+- Node 6.9+
+- MongoDB 3.4+
 ```
 npm install
 ```
