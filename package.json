@@ -4,7 +4,7 @@
   "description": "Seek out allies in a time of great need!",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "author": "Michael Straughan",
   "license": "ISC",
