@@ -40,6 +40,12 @@ const terminate = () => {
 const connect = (database) => {
   return mongoose.connect(url + database, {
     useMongoClient: true,
+    // I don't know what to do about the connection timeout issue:
+    // https://stackoverflow.com/questions/40585705/connection-timeout-for-mongodb-using-mongoose
+    // http://mongoosejs.com/docs/connections.html#options
+    socketTimeoutMS: 0,
+    keepAlive: true,
+    reconnectTries: 30
     /* other options */
   }, ()=>{
     console.log('Mongoose: Connected.');
