@@ -11,13 +11,14 @@ const patron = process.env.GITHUB_ACCOUNT || 'your_github_account';
 const email = process.env.EMAIL || 'email@mailinator.com';
 const password = process.env.PASSWORD || 'password';
 const rate = process.env.RATE_LIMITER || 1; // You might be able to go as low as 0.73, but I have not tried.
-const capture = process.env.CAPTURE || 100;
+let capture = process.env.CAPTURE || 100;
 
 const Octokat = require('octokat');
 const octo = new Octokat({
   username: email,
   password: password
 });
+
 
 let Nightmare = require('nightmare');
 let webDriver;
@@ -60,6 +61,18 @@ const initializeWebDriver = () => {
     show: showElectron,
     openDevTools: openDevModeElectron
   });
+};
+
+const clearTemporaryCollection = () => {
+  return Temporary.find({})
+    .then((followers) => {
+      const promises = followers.map(follower => follower.remove());
+      Promise.all(promises)
+        .then(() => {
+          console.log('Cleared Temporary Followers.');
+          return;
+        });
+    });
 };
 
 const range = (start, end) => Array.from({length: (end - start + 1)}, (v, k) => k + start);
@@ -276,8 +289,15 @@ const processMultipleFollowers = (count) => {
 
 };
 
+const args = process.argv;
+if (args.length > 2) {
+  capture = parseInt(args[2]);
+}
+
 mongoose.initialize()
   .then(mongoose.connect.bind(null, DATABASE))
+  .then(clearTemporaryCollection)
+
   .then(initializeWebDriver)
   .then(loginToGithub)
 
