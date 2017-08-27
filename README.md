@@ -18,7 +18,24 @@ If you are here wondering why am I following you and are looking for what might 
 npm install
 ```
 
+## Configuration
+#### Prerequisites Your credentials:
+The script requires the following information:
+- Github User Account
+- Github Login Email
+- Github Password
+Must be provided through:
+- Hard coded
+- .env file
+#### Prerequisites Following Rate:
+This how many followers the script will capture in one execution.
+Must be provided through:
+- Hard coded
+- .env file
+- Argument
+
 ## Execution
 ```
-node .
+npm start 25
 ```
+This will execute the script and attempt to follow 25 people starting from the provided seed value.
