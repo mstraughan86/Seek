@@ -19,16 +19,18 @@ npm install
 ```
 
 ## Configuration
-#### Prerequisites Your credentials:
+#### Your credentials:
 The script requires the following information:
 - Github User Account
 - Github Login Email
 - Github Password
+
 Must be provided through:
 - Hard coded
 - .env file
-#### Prerequisites Following Rate:
+#### Following Rate:
 This how many followers the script will capture in one execution.
+
 Must be provided through:
 - Hard coded
 - .env file
