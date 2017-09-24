@@ -62,11 +62,11 @@ const disconnect = () => {
   return mongoose.disconnect(()=>{console.log('Mongoose: Disconnected.')});
 };
 const save = (Model, dataArray) => {
-	console.log(dataArray);
+	//console.log(dataArray);
   return new Promise((resolve, reject)=>{
     Model.create(dataArray, function (err, results) {
       if (err) return reject(err);
-      console.log('Mongoose: Save successful!');
+      //console.log('Mongoose: Save successful!');
 
       // saved!
       resolve();
