@@ -213,29 +213,35 @@ const doFollowersAlreadyExist = ([results, user]) => {
       return Promise.resolve(user);
     });
 };
-const fetchAll = (func) => {
+const fetchAll = (func, user) => {
   wait();
   let acc = []; // Accumulated results
   return new Promise((resolve, reject) => {
-    func().then((val) => {
-      acc = acc.concat(val.items.map((i) => i.login));
-      if (val.nextPage) {
-        return fetchAll(val.nextPage.fetch)
-          .then((val2) => {
-            acc = acc.concat(val2);
-            resolve(acc);
-          }, reject);
-      }
-      else {
-        resolve(acc);
-      }
-    }, reject);
+    func()
+      .catch((err) => {
+        console.log('Previous User DID NOT EXIST! ', user);
+        return removeUserFrom(FollowerToProcess, user)
+          .then(seedFollower)
+          .then(fetchAllFollowers)
+          .then(resolve);
+      })
+      .then((val) => {
+        acc = acc.concat(val.items.map((i) => i.login));
+        if (val.nextPage) {
+          return fetchAll(val.nextPage.fetch)
+            .then((val2) => {
+              acc = acc.concat(val2);
+              resolve(acc);
+            }, reject);
+        }
+        else resolve(acc);
+      }, reject);
   });
 };
 const fetchAllFollowers = user => {
   console.log('Fetching user\'s followers:, ', user);
 
-  return fetchAll(octo.users(user).followers.fetch)
+  return fetchAll(octo.users(user).followers.fetch, user)
     .then(results => [results, user]);
 
   //const results = fetchAll(octo.users(user).followers.fetch);
@@ -277,7 +283,7 @@ const processMultipleFollowers = (count) => {
   ];
 
   let promisedWork = [];
-  range(1, count).forEach(()=>{promisedWork = promisedWork.concat(processOneFollower)});
+  range(1, count).forEach(() => {promisedWork = promisedWork.concat(processOneFollower)});
 
 
   return reducePromiseArray(promisedWork)
