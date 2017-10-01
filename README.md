@@ -3,7 +3,12 @@
 #### Seek out allies in a time of great need!
 If you are here wondering why am I following you and are looking for what might be the reason, this is the repository you are looking for. This project is to follow as many people as possible on Github. It is to get that number as high as I can get, using what I think is a reasonable strategy. This also served as a learning project for some new technologies I have been picking up, so there is not great emphasis on performance or efficiency. And finally, this project triples as an interview talking point: during the job screening process I am sure a proper vetting process would include looking at my Github profile, and an extra-ordinarily high following count might pique someone's interest in my favor!
 
+## Description
+#### What does this do?
+Automatically follows users for a patron account, starting from a seed user and continuing on using the seed user's followers for subsequent follows.
+
 ## Technologies
+#### Seeker Stack, Attack!
 - MongoDB + Mongoose
 - NodeJS
 - NightmareJS
