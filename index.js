@@ -271,15 +271,17 @@ const processMultipleFollowers = (count) => {
         return result;
       });
   }
-
+',.-~*´¨¯¨`*·~-.¸-(_START_)-,.-~*´¨¯¨`*·~-.¸'
   const processOneFollower = [
+    ()=>{console.log('\n\n\n______________________________________________________▂▃▅▇█▓▒░۩۞۩    START    ۩۞۩░▒▓█▇▅▃▂')},
     seedFollower,
     fetchAllFollowers,
     doFollowersAlreadyExist,
     followGithubUser,
     addUserTo.bind(null, ProcessedFollower),
     removeUserFrom.bind(null, FollowerToProcess),
-    swapTemporaryFollowers
+    swapTemporaryFollowers,
+    ()=>{console.log('______________________________________________________▂▃▅▇█▓▒░۩۞۩     END     ۩۞۩░▒▓█▇▅▃▂')}
   ];
 
   let promisedWork = [];
@@ -287,11 +289,7 @@ const processMultipleFollowers = (count) => {
 
 
   return reducePromiseArray(promisedWork)
-    .then(result => {
-      console.log('===== FINISHED NEW TEST =====');
-      console.log(result);
-      return result;
-    });
+    .then(() => console.log('\n\n_____________________________________________________▂▃▅▇█▓▒░۩۞۩    FINISH    ۩۞۩░▒▓█▇▅▃▂'));
 
 };
 
@@ -307,7 +305,7 @@ mongoose.initialize()
   .then(initializeWebDriver)
   .then(loginToGithub)
 
-  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => console.log('\n\n\n'))
   .then(() => {
     return FollowerToProcess.find({})
       .then(result => console.log('FollowerToProcess : ', result.length));
@@ -320,11 +318,11 @@ mongoose.initialize()
     return Temporary.find({})
       .then(result => console.log('Temporary : ', result.length));
   })
-  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => console.log('\n\n\n'))
 
   .then(processMultipleFollowers.bind(null, capture))
 
-  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => console.log('\n\n\n'))
   .then(() => {
     return FollowerToProcess.find({})
       .then(result => console.log('FollowerToProcess : ', result.length));
@@ -337,14 +335,21 @@ mongoose.initialize()
     return Temporary.find({})
       .then(result => console.log('Temporary : ', result.length));
   })
-  .then(() => console.log('--------------------------------------\n--------------------------------------'))
+  .then(() => console.log('\n\n\n'))
 
   .then(terminateWebDriver)
   .then(mongoose.disconnect)
   .then(delay.bind(null, 3000))
   .then(mongoose.terminate)
-  .then(() => {console.log(`-- !@#$%^&*() ---- captured ${capture} followers ---- )(*&^%$# --`);})
-  .catch(console.log.bind(console));
+  .then(() => {console.log(`${capture}    ۩۞۩░▒▓█▇▅▃▂_____________________________________________________▂▃▅▇█▓▒░۩۞۩    ${capture}`);})
+  .catch((error)=>{
+    Promise.resolve()
+      .then(() => console.log('ERRORED: ', error))
+      .then(terminateWebDriver)
+      .then(mongoose.disconnect)
+      .then(delay.bind(null, 3000))
+      .then(mongoose.terminate)
+  });
 
 /*
 
