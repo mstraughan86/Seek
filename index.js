@@ -153,7 +153,11 @@ const followGithubUser = (user) => {
         })
         .catch(function (error) {
           console.error('Nightmare failed:', error);
-          return reject(user);
+          return resolve()
+            .then(seedFollower)
+            .then(fetchAllFollowers)
+            .then(doFollowersAlreadyExist)
+            .then(followGithubUser);
         });
     })
 
@@ -271,7 +275,6 @@ const processMultipleFollowers = (count) => {
         return result;
       });
   }
-',.-~*´¨¯¨`*·~-.¸-(_START_)-,.-~*´¨¯¨`*·~-.¸'
   const processOneFollower = [
     ()=>{console.log('\n\n\n______________________________________________________▂▃▅▇█▓▒░۩۞۩    START    ۩۞۩░▒▓█▇▅▃▂')},
     seedFollower,
