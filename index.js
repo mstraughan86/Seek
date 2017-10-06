@@ -153,11 +153,12 @@ const followGithubUser = (user) => {
         })
         .catch(function (error) {
           console.error('Nightmare failed:', error);
-          return resolve()
-            .then(seedFollower)
+          console.error('Attempting to recover...');
+          return seedFollower()
             .then(fetchAllFollowers)
             .then(doFollowersAlreadyExist)
-            .then(followGithubUser);
+            .then(followGithubUser)
+            .then(resolve);
         });
     })
 
