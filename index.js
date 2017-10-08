@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const mongoose = require('./mongoose.js');
-const DATABASE = 'followers';
+const COLLECTION = process.env.DB_COLLECTION;
 const FollowerToProcess = mongoose.schemas.FollowerToProcess;
 const ProcessedFollower = mongoose.schemas.ProcessedFollower;
 const Temporary = mongoose.schemas.Temporary;
@@ -18,7 +18,6 @@ const octo = new Octokat({
   username: email,
   password: password
 });
-
 
 let Nightmare = require('nightmare');
 let webDriver;
@@ -75,6 +74,12 @@ const clearTemporaryCollection = () => {
     });
 };
 
+const chunk = (array, chunkSize) => {
+  const chunks = [];
+  for (let i=0; i<array.length; i+=chunkSize)
+    chunks.push(array.slice(i,i+chunkSize));
+  return chunks;
+};
 const range = (start, end) => Array.from({length: (end - start + 1)}, (v, k) => k + start);
 const wait = (s = rate) => {
   console.log('Waiting. ', s);
@@ -86,6 +91,15 @@ const wait = (s = rate) => {
   }
 };
 const delay = time => new Promise(resolve => setTimeout(resolve, time));
+
+const reducePromiseArray = (promises) => {
+  return promises
+    .reduce((chain, promise) => chain.then(promise), Promise.resolve())
+    .then(result => {
+      console.log('Reduce Promise Array complete.');
+      return result;
+    });
+};
 
 const swapTemporaryFollowers = () => {
   return Temporary.find({})
@@ -177,47 +191,43 @@ const followGithubUser = (user) => {
 };
 const doFollowersAlreadyExist = ([results, user]) => {
   const followers = results.map(result => ({login: result}));
-  const doesFollowerExist_FollowerToProcess = follower => {
-    return new Promise(resolve => {
-      return FollowerToProcess.count({login: follower.login}, (err, count) => {
-        if (count > 0) return resolve(true);
-        else return resolve(false);
-      });
-    });
+
+  const doesFollowerExist = (Collection, follower) => {
+    return Collection.count({login: follower.login})
+      .then(count => count > 0);
   };
-  const doesFollowerExist_ProcessedFollower = follower => {
-    return new Promise(resolve => {
-      return ProcessedFollower.count({login: follower.login}, (err, count) => {
-        if (count > 0) return resolve(true);
-        else return resolve(false);
-      });
-    });
-  };
-  const doesFollowerExist_Patron = follower => (patron == follower);
+  const isFollowerPatron = follower => (patron == follower);
 
   const promises = followers.map(follower => {
     const list = [
-      doesFollowerExist_FollowerToProcess.bind(null, follower)(),
-      doesFollowerExist_ProcessedFollower.bind(null, follower)(),
-      doesFollowerExist_Patron.bind(null, follower)()
+      doesFollowerExist.bind(null, FollowerToProcess, follower)(),
+      doesFollowerExist.bind(null, ProcessedFollower, follower)(),
+      isFollowerPatron.bind(null, follower)()
     ];
-    return Promise.all(list)
-      .then((results) => {
-        const [exist_FollowerToProcess, exist_ProcessedFollower, is_Patron] = results;
-        if (!exist_FollowerToProcess && !exist_ProcessedFollower && !is_Patron) {
-          return Promise.resolve(mongoose.save(Temporary, follower));
-        }
-        else {
-          console.log('Already in the system: ', follower.login);
-          return Promise.resolve('Already in the system');
-        }
-      })
+
+    return (()=>{
+      return new Promise(resolve => {
+        Promise.all(list)
+          .then(results => {
+            const [exist_FollowerToProcess, exist_ProcessedFollower, is_Patron] = results;
+            if (!exist_FollowerToProcess && !exist_ProcessedFollower && !is_Patron) {
+              resolve(mongoose.save(Temporary, follower));
+            }
+            else {
+              console.log('Already in the system:   ', follower.login);
+              resolve('Already in the system');
+            }
+          })
+      });
+    });
   });
-  return Promise.all(promises)
+
+  console.log('------------------------------ # of Followers Processing now: ', promises.length);
+
+  return reducePromiseArray(promises) // working
     .then(() => {
-      // not resolving here.
-      console.log('finished executing dynamic promise chain');
-      return Promise.resolve(user);
+      console.log('finished executing dynamic reduced promise chain!!! BEFORE NIGHTMARE');
+      return user;
     });
 };
 const fetchAll = (func, user) => {
@@ -269,15 +279,6 @@ const seedFollower = () => {
 };
 
 const processMultipleFollowers = (count) => {
-
-  function reducePromiseArray(promises) {
-    return promises
-      .reduce((chain, promise) => chain.then(promise), Promise.resolve())
-      .then(result => {
-        console.log('Reduce Promise Array complete.');
-        return result;
-      });
-  }
   const processOneFollower = [
     ()=>{console.log('\n\n\n______________________________________________________▂▃▅▇█▓▒░۩۞۩    START    ۩۞۩░▒▓█▇▅▃▂')},
     seedFollower,
@@ -305,7 +306,7 @@ if (args.length > 2) {
 }
 
 mongoose.initialize()
-  .then(mongoose.connect.bind(null, DATABASE))
+  .then(mongoose.connect.bind(null, COLLECTION))
   .then(clearTemporaryCollection)
 
   .then(initializeWebDriver)
