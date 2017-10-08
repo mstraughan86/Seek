@@ -2,14 +2,15 @@ const mongod = require('mongod');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const port = 27017;
+const port = process.env.DB_PORT;
 const url = `mongodb://localhost:${port}/`;
+const dbpath = process.env.DB_PATH;
 
 mongoose.Promise = global.Promise;
 
 const mongoDB = new mongod({
   port: port,
-  dbpath: path.join(__dirname, '.', 'mongodb', 'data')
+  dbpath: path.join(__dirname, '.', dbpath)
 });
 
 const followerSchema = new mongoose.Schema({
