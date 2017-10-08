@@ -84,8 +84,8 @@ const range = (start, end) => Array.from({length: (end - start + 1)}, (v, k) => 
 const wait = (s = rate) => {
   console.log('Waiting. ', s);
   ms = s * 1000;
-  var start = new Date().getTime();
-  var end = start;
+  let start = new Date().getTime();
+  let end = start;
   while (end < start + ms) {
     end = new Date().getTime();
   }
@@ -111,7 +111,7 @@ const swapTemporaryFollowers = () => {
             const promises = followers.map(follower => follower.remove());
             Promise.all(promises)
               .then(() => {
-                console.log('finished executing dynamic promise chain, swapping Temporary to FollowerToProcess');
+                console.log('Finished swapping Temporary followers to the FollowerToProcess list');
                 return resolve();
               });
           });
@@ -119,7 +119,7 @@ const swapTemporaryFollowers = () => {
     });
 };
 const removeUserFrom = (Collection, user) => {
-  console.log(`removeUserFrom ${user}`);
+  console.log(`   ${user}    removeUserFrom    ${Collection.collection.name}`);
   // transform user to model with Get and collection
 
   return new Promise((resolve) => {
@@ -136,7 +136,7 @@ const removeUserFrom = (Collection, user) => {
 
 };
 const addUserTo = (Collection, user) => {
-  console.log(`addUserTo ${user}`);
+  console.log(`   ${user}    addUserTo         ${Collection.collection.collectionName}`);
 
   return new Promise((resolve) => {
     Collection.findOne({login: user}, (err, result) => {
@@ -222,11 +222,11 @@ const doFollowersAlreadyExist = ([results, user]) => {
     });
   });
 
-  console.log('------------------------------ # of Followers Processing now: ', promises.length);
+  console.log('-------------------------- # of Followers Processing now:     ', promises.length);
 
-  return reducePromiseArray(promises) // working
+  return reducePromiseArray(promises)
     .then(() => {
-      console.log('finished executing dynamic reduced promise chain!!! BEFORE NIGHTMARE');
+      console.log('Finished evaluating followers! They either exist or don\'t!');
       return user;
     });
 };
@@ -256,13 +256,10 @@ const fetchAll = (func, user) => {
   });
 };
 const fetchAllFollowers = user => {
-  console.log('Fetching user\'s followers:, ', user);
+  console.log('Fetching followers for       ->  ', user);
 
   return fetchAll(octo.users(user).followers.fetch, user)
     .then(results => [results, user]);
-
-  //const results = fetchAll(octo.users(user).followers.fetch);
-  //return [results, user]
 };
 const seedFollower = () => {
   return FollowerToProcess.findOne({})
