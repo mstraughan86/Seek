@@ -154,7 +154,9 @@ const followGithubUser = (user) => {
         .catch(function (error) {
           console.error('Nightmare failed:', error);
           console.error('Attempting to recover...');
-          return seedFollower()
+
+          return removeUserFrom(FollowerToProcess, user)
+            .then(seedFollower)
             .then(fetchAllFollowers)
             .then(doFollowersAlreadyExist)
             .then(followGithubUser)
