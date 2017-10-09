@@ -12,6 +12,7 @@ const email = process.env.EMAIL || 'email@mailinator.com';
 const password = process.env.PASSWORD || 'password';
 const rate = process.env.RATE_LIMITER || 1; // You might be able to go as low as 0.73, but I have not tried.
 let capture = process.env.CAPTURE || 100;
+let chunkSize = 200;
 
 const Octokat = require('octokat');
 const octo = new Octokat({
@@ -190,6 +191,21 @@ const followGithubUser = (user) => {
 
 };
 const doFollowersAlreadyExist = ([results, user]) => {
+
+  if (results.length > chunkSize) {
+
+    const splitResults = chunk(results, chunkSize);
+    const promises = [];
+    splitResults.forEach(chunk=> promises.push(doFollowersAlreadyExist.bind(null, [chunk, user])));
+
+    return reducePromiseArray(promises)
+      .then(() => {
+        console.log(`-------==<<      CHUNK by ${chunkSize} FINISHED.      >>==-------`);
+        return user;
+      });
+
+  }
+
   const followers = results.map(result => ({login: result}));
 
   const doesFollowerExist = (Collection, follower) => {
