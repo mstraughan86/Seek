@@ -1,5 +1,5 @@
-# Icarus
-## Update:
+# Seek
+## Update: Like Icarus, we sought and Apollo disapproved.
 I would like to inform any future developers that pursuing automated measures to follow users, stop. GitHub will flag your account and all will be for naught. Remember, you exist on someone else's platform and you must respect their rules, by pen or sword.
 
 I have provided a transcript below for reference:
@@ -16,14 +16,14 @@ I have provided a transcript below for reference:
 > Mr. Anderson
 
 And also:
-(The GitHub Terms of Service C.3. Acceptable Use: Conduct Restrictions)[https://help.github.com/articles/github-terms-of-service/#3-conduct-restrictions]
+[The GitHub Terms of Service C.3. Acceptable Use: Conduct Restrictions](https://help.github.com/articles/github-terms-of-service/#3-conduct-restrictions)
 
 The below remains as a cautionary tale. Icarus, you flew too high and the sun would not let you so near.
 
 ## Introduction
 #### Seek out allies in a time of great need!
 
-This project is to follow as many people as possible on Github. It is to get that number as high as I can get, ~~using what I think is a reasonable strategy~~ (There exists no automation strategy that is acceptable). This also served as a learning project for some new technologies I have been picking up, so there is not great emphasis on performance or efficiency.
+This project is to follow as many people as possible on Github. It is to get that number as high as I can get, ~~using what I think is a reasonable strategy~~ **(There exists no automation strategy that is acceptable)**. This also served as a learning project for some new technologies I have been picking up, so there is not great emphasis on performance or efficiency.
 
 ## Description
 #### What does this do?
@@ -37,10 +37,9 @@ Automatically follows users for a patron account, starting from a seed user and 
 - GithubAPI + Octokat
 - ES6 Style Vanilla Promises Only!
 
-## Installation
-## Configuration
-## Execution
-:no_entry_sign: Will not support! :no_entry_sign:
+## Installation :no_entry_sign::no_entry_sign: Will not support
+## Configuration :no_entry_sign::no_entry_sign: Will not support
+## Execution :no_entry_sign::no_entry_sign: Will not support
 
 ## Account Repair
 If you were unfortunate enough to utilize this and received a subsequent flag on your account, I have provided a command to start removing all your followers, rectify the infraction and redeem your account status.
