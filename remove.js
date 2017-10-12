@@ -296,26 +296,18 @@ const seedFollower = () => {
 const processMultipleUnfollows = (count) => {
   const processOneFollower = [
     ()=>{console.log('\n\n\n______________________________________________________▂▃▅▇█▓▒░۩۞۩    START    ۩۞۩░▒▓█▇▅▃▂')},
-    seedFollower,
-    fetchAllFollowers,
-    doFollowersAlreadyExist,
-    followGithubUser,
-    addUserTo.bind(null, ProcessedFollower),
-    removeUserFrom.bind(null, FollowerToProcess),
-    swapTemporaryFollowers,
+    getProcessedUser,
+    unfollowGithubUser,
+    updateUser.bind(null, ProcessedFollower),
     ()=>{console.log('______________________________________________________▂▃▅▇█▓▒░۩۞۩     END     ۩۞۩░▒▓█▇▅▃▂')}
   ];
 
   let promisedWork = [];
   range(1, count).forEach(() => {promisedWork = promisedWork.concat(processOneFollower)});
 
-
   return reducePromiseArray(promisedWork)
     .then(() => console.log('\n\n_____________________________________________________▂▃▅▇█▓▒░۩۞۩    FINISH    ۩۞۩░▒▓█▇▅▃▂'));
-
 };
-
-
 
 const args = process.argv;
 if (args.length > 2) {
@@ -324,8 +316,6 @@ if (args.length > 2) {
 
 mongoose.initialize()
   .then(mongoose.connect.bind(null, COLLECTION))
-  .then(clearTemporaryCollection)
-
   .then(initializeWebDriver)
   .then(loginToGithub)
 
@@ -335,7 +325,13 @@ mongoose.initialize()
       .then(result => {
         console.log('ProcessedFollower : ', result.length);
         const unfollowed = result.map(() => {
+
+          
+
           // figure out how to do this.
+
+
+
         });
         console.log('ProcessedFollower Unfollowed: ', unfollowed.length);
       });
